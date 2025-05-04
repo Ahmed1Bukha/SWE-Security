@@ -5,15 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CalendarDays, FileText, HeartPulse, ShieldCheck } from "lucide-react"
 
 export default function WelcomeDashboard() {
-  const { user } = useAuth()
+  const { user, isSupabaseConfigured } = useAuth()
 
-  if (!user) return null
+  if (!isSupabaseConfigured || !user) return null
+
+  const firstName = user.user_metadata?.first_name || user.email?.split("@")[0] || "Patient"
 
   return (
     <div className="mb-8">
       <Card className="border-teal-100 bg-gradient-to-r from-teal-50 to-white">
         <CardHeader>
-          <CardTitle className="text-2xl text-teal-700">Welcome, {user.name}</CardTitle>
+          <CardTitle className="text-2xl text-teal-700">Welcome, {firstName}</CardTitle>
           <CardDescription>Your healthcare dashboard</CardDescription>
         </CardHeader>
         <CardContent>

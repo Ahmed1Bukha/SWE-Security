@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z
   .object({
@@ -41,8 +41,8 @@ type FormValues = z.infer<typeof formSchema>
 export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const { signUp } = useAuth()
   const { toast } = useToast()
-  const router = useRouter()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,14 +60,22 @@ export default function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call and encryption process
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Prepare user metadata
+      const userData = {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        gender: data.gender,
+        full_name: `${data.firstName} ${data.lastName}`,
+      }
+
+      // Sign up with Supabase
+      await signUp(data.email, data.password, userData)
 
       // Success
       setIsComplete(true)
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully.",
+        description: "Your account has been created successfully. Please check your email for verification.",
       })
     } catch (error) {
       toast({
@@ -93,20 +101,18 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="pt-6 text-center">
             <p className="mb-4 text-gray-600">
-              Thank you for registering with our healthcare system. Your information has been securely stored.
+              Thank you for registering with our healthcare system. Please check your email to verify your account.
             </p>
             <p className="text-sm text-gray-500">
-              You will receive a confirmation email shortly with your account details.
+              You will be able to access all features once your email is verified.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">
-            <Button
-              variant="outline"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800"
-              onClick={() => router.push("/")}
-            >
-              Return to Home
-            </Button>
+            <Link href="/login">
+              <Button variant="outline" className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800">
+                Proceed to Login
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
@@ -135,7 +141,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>First Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Mohammed" {...field} />
+                          <Input placeholder="John" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -148,7 +154,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Last Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ali" {...field} />
+                          <Input placeholder="Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -163,7 +169,7 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Mohammed.Ali@example.com" {...field} />
+                        <Input type="email" placeholder="john.doe@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -193,6 +199,18 @@ export default function RegisterPage() {
                               <RadioGroupItem value="female" />
                             </FormControl>
                             <FormLabel className="font-normal">Female</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="other" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Other</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="prefer-not-to-say" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Prefer not to say</FormLabel>
                           </FormItem>
                         </RadioGroup>
                       </FormControl>

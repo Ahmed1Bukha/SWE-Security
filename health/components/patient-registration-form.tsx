@@ -133,12 +133,12 @@ export default function PatientRegistrationForm() {
   const nextStep = async () => {
     const isValid = await validateCurrentStep()
     if (isValid) {
-      setStep((prev: number) => Math.min(prev + 1, 4))
+      setStep((prev) => Math.min(prev + 1, 4))
     }
   }
 
   const prevStep = () => {
-    setStep((prev: number) => Math.max(prev - 1, 1))
+    setStep((prev) => Math.max(prev - 1, 1))
   }
 
   const onSubmit = async (data: FormValues) => {

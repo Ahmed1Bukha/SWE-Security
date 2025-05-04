@@ -74,7 +74,7 @@ export default function MedicalRecordsPage() {
               placeholder="Search records..."
               className="w-full pl-8 md:w-[250px]"
               value={searchTerm}
-              onChange={(e: { target: { value: any } }) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>

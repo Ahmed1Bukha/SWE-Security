@@ -2,11 +2,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { LockKeyhole, Shield } from "lucide-react"
+import { AlertCircle, LockKeyhole, Mail, Shield } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -24,9 +24,11 @@ type FormValues = z.infer<typeof formSchema>
 
 export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { login } = useAuth()
+  const [isResendingEmail, setIsResendingEmail] = useState(false)
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState("")
+  const { signIn, resendConfirmationEmail } = useAuth()
   const { toast } = useToast()
-  const router = useRouter()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -38,22 +40,57 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true)
+    setEmailNotConfirmed(false)
 
     try {
-      await login(data.email, data.password)
+      const { error } = await signIn(data.email, data.password)
+
+      if (error) {
+        if (error.message.includes("Email not confirmed") || error.code === "401") {
+          setEmailNotConfirmed(true)
+          setUnconfirmedEmail(data.email)
+          return
+        }
+
+        toast({
+          title: "Authentication Failed",
+          description: error.message || "Invalid email or password. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
 
       toast({
         title: "Login Successful",
         description: "You have been successfully authenticated.",
       })
-    } catch (error) {
-      toast({
-        title: "Authentication Failed",
-        description: "Invalid email or password. Please try again.",
-        variant: "destructive",
-      })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleResendEmail = async () => {
+    if (!unconfirmedEmail) return
+
+    setIsResendingEmail(true)
+    try {
+      const { error } = await resendConfirmationEmail(unconfirmedEmail)
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to resend confirmation email. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      toast({
+        title: "Confirmation Email Sent",
+        description: "Please check your inbox for the confirmation email.",
+      })
+    } finally {
+      setIsResendingEmail(false)
     }
   }
 
@@ -69,6 +106,26 @@ export default function LoginPage() {
             <CardDescription>Access your healthcare account</CardDescription>
           </CardHeader>
           <CardContent>
+            {emailNotConfirmed && (
+              <Alert variant="warning" className="mb-6 border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertTitle className="text-yellow-800">Email Not Confirmed</AlertTitle>
+                <AlertDescription className="text-yellow-700">
+                  <p className="mb-2">Please confirm your email address before logging in.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 border-yellow-300 bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                    onClick={handleResendEmail}
+                    disabled={isResendingEmail}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    {isResendingEmail ? "Sending..." : "Resend Confirmation Email"}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField

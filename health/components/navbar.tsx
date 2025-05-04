@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/auth-context"
 export default function Navbar() {
   const { setTheme } = useTheme()
   const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, signOut, isSupabaseConfigured } = useAuth()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -93,7 +93,7 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {isAuthenticated ? (
+          {isSupabaseConfigured && isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
@@ -102,21 +102,25 @@ export default function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="font-medium">{user?.name}</DropdownMenuItem>
+                <DropdownMenuItem className="font-medium">
+                  {user?.user_metadata?.full_name || user?.email}
+                </DropdownMenuItem>
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/login">
-              <Button variant="default" size="sm" className="bg-teal-600 hover:bg-teal-700">
-                Sign In
-              </Button>
-            </Link>
+            isSupabaseConfigured && (
+              <Link href="/login">
+                <Button variant="default" size="sm" className="bg-teal-600 hover:bg-teal-700">
+                  Sign In
+                </Button>
+              </Link>
+            )
           )}
         </div>
       </div>

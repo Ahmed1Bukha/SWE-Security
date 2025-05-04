@@ -6,9 +6,15 @@ import { ArrowRight, ClipboardList, FileText, ShieldCheck, UserPlus, LockKeyhole
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import WelcomeDashboard from "@/components/welcome-dashboard"
+import SupabaseError from "@/components/supabase-error"
 
 export default function Home() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isSupabaseConfigured } = useAuth()
+
+  // Show Supabase error if not configured
+  if (!isSupabaseConfigured) {
+    return <SupabaseError />
+  }
 
   return (
     <div className="container py-8">
