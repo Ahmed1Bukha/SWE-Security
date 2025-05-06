@@ -9,12 +9,21 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   isLoading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: { message: string; code?: string } }>
+  signIn: (email: string, password: string) => Promise<{ error?: { message: string; code?: string } ,data?:{
+    user: User;
+    session: Session;
+    
+} | {
+    user: null;
+    session: null;
+    weakPassword?: null;
+} }>
   signUp: (email: string, password: string, userData: any) => Promise<{ error?: { message: string } }>
   signOut: () => Promise<void>
   resendConfirmationEmail: (email: string) => Promise<{ error?: { message: string } }>
   isAuthenticated: boolean
   isSupabaseConfigured: boolean
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,12 +36,14 @@ const AuthContext = createContext<AuthContextType>({
   resendConfirmationEmail: async () => ({}),
   isAuthenticated: false,
   isSupabaseConfigured: true,
+  isAdmin:false
 })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [admin,setAdmin] = useState(false);
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(true)
   const router = useRouter()
 
@@ -76,17 +87,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error,data } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        return { error: { message: error.message, code: error.code } }
+        return { error: { message: error.message, code: error.code } , data }
       }
 
-      router.push("/")
+      console.log(data.user.id);
+      
+
+      const userRole = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+      console.log(userRole.data?.role);
+
+      if(userRole.data?.role.toString() =="admin"){
+        setAdmin(true)
+        router.push("/admin/dashboard")
+        
+      }
+      else{
+        router.push("/")
+        
+      }
       router.refresh()
+      
       return {}
     } catch (error: any) {
       console.error("Error signing in:", error)
@@ -161,6 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         resendConfirmationEmail,
         isAuthenticated: !!user,
         isSupabaseConfigured,
+        isAdmin:admin
       }}
     >
       {children}

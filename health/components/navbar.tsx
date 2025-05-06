@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/auth-context"
 export default function Navbar() {
   const { setTheme } = useTheme()
   const pathname = usePathname()
-  const { user, isAuthenticated, signOut, isSupabaseConfigured } = useAuth()
+  const { user, isAuthenticated, signOut, isSupabaseConfigured,isAdmin } = useAuth()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -25,6 +25,7 @@ export default function Navbar() {
         { name: "Dashboard", path: "/" },
         { name: "Medical Records", path: "/medical-records" },
         { name: "Insurance Claims", path: "/insurance-claims" },
+       ...(isAdmin ? [{ name: "Admin Dashboard", path: "/admin/dashboard" }] : []),
       ]
     : [
         { name: "Home", path: "/" },
