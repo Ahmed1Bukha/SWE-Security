@@ -24,7 +24,7 @@ export default function Navbar() {
     ? [
         { name: "Dashboard", path: "/" },
         { name: "Medical Records", path: "/medical-records" },
-        { name: "Insurance Claims", path: "/insurance-claims" },
+        { name: "Insurance Claims", path: "/admin/dashboard/digital-signature" },
        ...(isAdmin ? [{ name: "Admin Dashboard", path: "/admin/dashboard" }] : []),
       ]
     : [
