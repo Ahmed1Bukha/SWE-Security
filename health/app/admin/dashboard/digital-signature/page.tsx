@@ -18,6 +18,9 @@ import { FileCheck, FileText, Shield, AlertCircle, CheckCircle2 } from 'lucide-r
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/utils/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createHash } from 'crypto';
+import crypto from 'crypto';
+
 
 export default function ProcessInsuranceClaims() {
   const { toast } = useToast();
@@ -133,28 +136,64 @@ export default function ProcessInsuranceClaims() {
   };
 
   // Generate a digital signature for the claim data
-  const generateDigitalSignature = (data) => {
-    // In a real implementation, you would:
-    // 1. Use a proper cryptographic library
-    // 2. Create a hash of the data
-    // 3. Sign it with a private key
-    // 4. Return the signature
-    
-    // This is just a simple mock for demonstration
-    const jsonData = JSON.stringify(data);
-    
-    // Simulate a SHA-256 hash (in production, use actual crypto methods)
-    let hash = 0;
-    for (let i = 0; i < jsonData.length; i++) {
-      const char = jsonData.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+  const generateDigitalSignature = (data: any): string => {
+    try {
+        const algorithm = 'aes-256-cbc';
+        const key = crypto.randomBytes(32);
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(algorithm, key, iv);
+      
+      // Convert data to JSON string
+      const jsonData = JSON.stringify(data);
+      let encrypted = cipher.update(jsonData, 'utf-8', 'hex');
+      encrypted += cipher.final('hex');
+      return `sig_${encrypted}`;
+      // Create a sign object
+      const sign = crypto.createSign('sha256');
+      
+      // Update with the message to be signed
+      sign.update(jsonData);
+      
+      // Define a properly formatted private key (make sure line breaks are preserved)
+      const privateKey = `-----BEGIN RSA PRIVATE KEY-----
+  MIIEowIBAAKCAQEAy8Dbv8prpJ/0kKhlGeJYozo2t60EG8L0561g13R29LvMR5hy
+  vGZlGJpmn65+A4xHXInJYiPuKzrKUnApeLZ+vw1HocOAZtWK0z3r26uA8kQYOKX9
+  Qt/DbCdvsF9wF8gRK0ptx9M6R13NvBxvVQApfc9jB9nTzphOgM4JiEYvlV8FLhg9
+  yZovMYd6Wwf3aoXK891VQxTr/kQYoq1Yp+68i6T4nNq7NWC+UNVjQHxNQMQMzU6l
+  WCX8zyg3yH88OAQkUXIXKfQ+NkvYQ1cxaMoVPpY72+eVthKzpMeyHkBn7ciumk5q
+  gLTEJAfWZpe4f4eFZj/Rc8Y8Jj2IS5kVPjUywQIDAQABAoIBADhg1u1Mv1hAAlX8
+  omz1Gn2f4AAW2aos2cM5UDCNw1SYmj+9SRIkaxjRsE/C4o9sw1oxrg1/z6kajV0e
+  N/t008FdlVKHXAIYWF93JMoVvIpMmT8jft6AN/y8CgsMIoKcRKej1Ma1outer1+/
+  YO/ylELzkHRzUNwrWcgDOJ/LbBfbB7QwXA8n7vCWH/AiCDtZTx9SfnFu7IW6gYJ+
+  jPxZQGHgQnmvWFD6q7D0YKV+opT1dOaLE55lI7F1W9L6l3Y3vs+ZY5+PYEZz/kbJ
+  SiBk6UAjJ2A9rxRPZKl1xbxZ34wwW3iQCjRt3cYXXUD6LOIAnxIkG+UzRlZRmCnX
+  owj4SL0CgYEA+UjYXLlSS42nUT/eSKIQRhYqHbMsJhNnGlXYDt/d/Qh+PtPIBt1a
+  d4JbmvxpgFIRJJLNgYAXxTt10LU+iVG9J/A+ouJdGcMkMSrA2ZrpwX7MEXThFfLf
+  pZKp9rhk/7mLT/RQhUBEQ0Vf8+Pz3fC3hFYvAIZlrDA9lCDYXZGo38cCgYEA0RQG
+  lqC50HXM9f39hdN50V6KCVlVCIf3JgK0KwKx8whbbNP8cy+xzF+SV1thCqZMeQyj
+  aDKEKZ8m0wKjtKe2eDK+vdvNYYYEYuQGn/MqhzyQZ5G3hvVZPQYnX7Q+uDMNvmW4
+  DRkHGZ04o6V63k0jUGEPNwFzW5k7hLt4GnOVGJcCgYEAu5/jc4Q94Z7j4SM8uv7+
+  Fv/4AHTGIZAzEqnXWKmgaml3ULg5lfuITvQL/JtWfpnMLjR/mXj1Im52/DLHnP+p
+  9tQRIwvkRKErPt6V646hEWnzy7CGFpLQ38P5xOX+KGRPCzKUYtO2I7I+wPvKZp3J
+  SJaLz7RUOfWci3EwC1CkrhMCgYAagvE6tF1puk0cpFJ+x+iRYjlcMplCgpzECCJ5
+  Bj061AbjHE8+UvTGhpYZIyiEOFvGPLqY2z/QUcFu3I/K8RdYZEMfcK97jE4rP68L
+  FwJKw+fOoFK/QLP8Qxs+caR4p6YZnFRh3MJKSgmlNeWHuJdWzDmNtUZHLSbBCfPG
+  LpOLPQKBgC90UE75s6H4THR9I4gIbAJBah4xH/BUerJ5dHMB9H8kw6m1CsjBq3gM
+  kBUNQYGdXJOcQq+EYAQFajd7RFXp9yUFxTNZuom80xQpBYjZUdEjcVj5nzwvcgK/
+  bAjkGtc1yUO7hCg1Vs5sj3Ry9QfQvz1/3GgBFfL4bTfLhCSAPWR/
+  -----END RSA PRIVATE KEY-----`;
+      
+      // Sign the message using the private key
+      const signature = sign.sign(privateKey, 'hex');
+      
+      return `sig_${signature}`;
+    } catch (error) {
+      console.error('Error details:', error);
+      throw error;
     }
-    
-    // Convert to hex string and pad
-    const signature = Math.abs(hash).toString(16).padStart(16, '0');
-    return `sig_${signature}`;
   };
+  
+  
 
   // Submit a new claim to Supabase
   const handleSubmit = async () => {
